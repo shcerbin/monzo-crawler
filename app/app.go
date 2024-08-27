@@ -34,6 +34,7 @@ func Run(domain Domain) {
 	writer := csv.NewWriter(resultFile)
 
 	var (
+		wg             sync.WaitGroup
 		uniqueLinks    sync.Map
 		lock           sync.Mutex
 		requestLimiter = make(chan struct{}, concurrentRequests)
@@ -44,6 +45,8 @@ func Run(domain Domain) {
 	// Recursively visit links
 	var f func(string)
 	f = func(link string) {
+		defer wg.Done()
+
 		// would block if requestLimiter channel is already filled
 		requestLimiter <- struct{}{}
 		counter.Add(1)
@@ -90,13 +93,18 @@ found new link: %s, request counter: %d, time: %s
 				continue
 			}
 
-			f(newLink)
+			wg.Add(1)
+			go f(newLink)
 		}
 	}
 
 	// start the recursive link checking
 	parsedDomainLink, _ := parseLink("/", domain)
+
+	wg.Add(1)
 	f(parsedDomainLink)
+
+	wg.Wait()
 
 	fmt.Printf(`total time: %s, request counter: %d, resultFileName: %s`,
 		time.Since(timer), counter.Load(), resultFileName)
