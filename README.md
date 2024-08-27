@@ -23,3 +23,4 @@ DOMAIN=example.com go run ./cmd/main.go
 - The results are saved to a file as soon as new links are found, so as not to lose them if something goes wrong
 - Everything fit into two files with logic: app.go and crawler.go
 - The code is covered with integration tests that run in parallel
+- 23s to crawl monzo.com domain
